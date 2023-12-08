@@ -22,6 +22,7 @@ export const register = async (req: Request, res: Response) => {
 }
 
 export const logIn = async (req: Request, res: Response) => {
+    console.log(req.userId);
     try {
         // Ta in användarnamn och lösen
         const { username, password } = req.body;
@@ -43,8 +44,24 @@ export const logIn = async (req: Request, res: Response) => {
 
         res.status(200).json({token, username: user.userName})
     } catch (error) {
+        console.log("Error in login", error);
         res.status(500).json({
             message: "Something blew up"
         })
     }
+}
+
+export const profile = async (req: Request, res: Response) => {
+    const { userId } = req
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+        console.log("User not found with id: ", userId)
+        return res.status(404).json({message: 'User not found'});
+    }
+
+    res.status(200).json({
+        userName: user.userName
+    })
 }
