@@ -17,7 +17,7 @@ export const register = async (req: Request, res: Response) => {
         res.status(201).json({ username, id: user._id });
     } catch (error) {
         console.log(error);
-        res.status(500).send("Internal Server Error");
+        res.status(500).json({ message: "Internal Server Error" });
     }
 }
 
@@ -40,15 +40,53 @@ export const logIn = async (req: Request, res: Response) => {
         }
         
         // Returnera JWT
-        const token = jwt.sign({ userId: user._id }, secret);
+        const token = jwt.sign({ userId: user._id }, secret, { expiresIn: '1h' });
+        
+        const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+        if (!refreshTokenSecret ) {
+            throw Error('Missing REFRESH_TOKEN_SECRET');
+        }
+        // Returnera refreshtoekn
+        const refreshToken = jwt.sign({ userId: user._id }, refreshTokenSecret, { expiresIn: '1d' });
 
-        res.status(200).json({token, username: user.userName})
+
+        res.status(200).json({token, refreshToken, username: user.userName})
     } catch (error) {
         console.log("Error in login", error);
         res.status(500).json({
             message: "Something blew up"
         })
     }
+}
+
+export const refreshJWT = async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+
+    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+    if (!refreshTokenSecret ) {
+        throw Error('Missing REFRESH_TOKEN_SECRET');
+    }
+
+    try {
+    // Returnera refreshtoekn
+    const decodedPayload = await jwt.verify(refreshToken, refreshTokenSecret) as {userId: string};  
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        throw Error('Missing JWT_SECRET');
+    }
+    
+    // Returnera JWT
+    const token = jwt.sign({ userId: decodedPayload.userId }, secret, { expiresIn: '1h' });
+
+    return res.status(200).json({
+        token
+    })
+    } catch(error) {
+        console.log(error)
+        return res.status(403).json({message: 'invalid token'})
+    }
+    
 }
 
 export const profile = async (req: Request, res: Response) => {
