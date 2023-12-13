@@ -22,12 +22,11 @@ export const register = async (req: Request, res: Response) => {
 }
 
 export const logIn = async (req: Request, res: Response) => {
-    console.log(req.userId);
     try {
         // Ta in användarnamn och lösen
         const { username, password } = req.body;
-        // Hitta en användare
-        const user = await User.findOne({userName: username});
+        // Hitta en användare och hämta ut lösenordet
+        const user = await User.findOne({userName: username}, '+password');
 
         // Kolla att vi har en användare och om lösenordet matchar det i databasen.
         if (!user || !await bcrypt.compare(password, user.password)) {

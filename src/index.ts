@@ -18,6 +18,7 @@ app.get('/profile', validateToken, authController.profile);
 
 app.post('/posts', validateToken, postsController.create);
 app.get('/posts', postsController.getAllPosts);
+app.get('/posts/:id', postsController.getPost);
 
 const mongoURL = process.env.DB_URL;
 
