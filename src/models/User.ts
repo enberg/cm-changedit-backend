@@ -21,7 +21,7 @@ const UserSchema = new Schema<IUser>({
     },
     password: {
         type: String,
-        select: false,
+        select: false, // Vi vill inte att lösenordet ska skickas med i våra svar
         required: true
     },
  }, {

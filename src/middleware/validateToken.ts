@@ -31,12 +31,13 @@ const validateToken = (req: Request, res: Response, next: NextFunction) => {
             return res.status(403).json({message: 'Not authorized'});
         }
 
+        // Kolla att användaren finns i databasen
         if (!await User.exists({_id: decodedPayload.userId})) {
             return res.status(403).json({message: 'Not authorized'});
         }
 
         // Lägga till userId på req 
-        req.userId = decodedPayload.userId
+        req.userId = decodedPayload.userId;
         next()
     })
 }

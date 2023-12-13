@@ -43,7 +43,7 @@ export const getAllPosts = async (req: Request, res: Response) => {
         posts,
         totalPages: Math.ceil(totalCount/limit),
     })
-}
+};
 
 export const getPost = async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -57,4 +57,4 @@ export const getPost = async (req: Request, res: Response) => {
     }
 
     res.status(200).json(post)
-}
+};
