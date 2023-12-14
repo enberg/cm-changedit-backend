@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import Post from "../models/Post";
-import { get } from "mongoose";
 
 export const create = async (req: Request, res: Response) => {
     const { title, link, body } = req.body;
@@ -47,7 +46,9 @@ export const getAllPosts = async (req: Request, res: Response) => {
 export const getPost = async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const post = await Post.findById(id).populate("author", "userName");
+    const post = await Post.findById(id)
+        .populate("author", "userName")
+        .populate("comments.author", "userName");
 
     if (!post) {
         return res.status(404).json({ message: 'Post not found' });
@@ -104,3 +105,55 @@ export const deletePost = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Failed to delete post' });
     }
 };
+
+export const createComment = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { body } = req.body as { body: string };
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!req.userId) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const comment = {
+        body,
+        author: req.userId
+    };
+
+    post.comments.push(comment);
+
+    const updatedPost = await post.save().then(post => post.populate("comments.author", "userName"));
+
+    res.status(201).json(updatedPost);
+}
+
+export const deleteComment = async (req: Request, res: Response) => {
+    const { id, commentId } = req.params;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const comment = post.comments.id(commentId);
+
+    if (!comment) {
+        return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (comment.author.toString() !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    comment.deleteOne();
+
+    const updatedPost = await post.save();
+
+    res.status(200).json(updatedPost);
+}

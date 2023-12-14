@@ -1,4 +1,24 @@
-import { Document, Schema, Types, model } from "mongoose";
+import { Document, Model, Schema, Types, model } from "mongoose";
+
+interface IComment extends Document {
+    body: string;
+    author: Types.ObjectId;
+}
+
+const CommentSchema = new Schema<IComment>({
+    body: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    }
+}, {
+    timestamps: true
+});
 
 interface IPost extends Document {
     title: string;
@@ -7,9 +27,16 @@ interface IPost extends Document {
     author: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
+    comments: IComment[];
 }
 
-const PostSchema = new Schema<IPost> ({
+interface PostProps {
+    comments: Types.DocumentArray<IComment>;
+}
+
+type PostModel = Model<IPost, {}, PostProps>;
+
+const PostSchema = new Schema<IPost, PostModel> ({
     title: {
         type: String,
         required: true,
@@ -26,12 +53,13 @@ const PostSchema = new Schema<IPost> ({
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-    }
+    },
+    comments: [CommentSchema]
 }, {
     timestamps: true
 });
 
-const Post = model<IPost>('Post', PostSchema);
+const Post = model<IPost, PostModel>('Post', PostSchema);
 
 export default Post;
 
