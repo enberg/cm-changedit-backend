@@ -58,3 +58,52 @@ export const getPost = async (req: Request, res: Response) => {
 
     res.status(200).json(post)
 };
+
+export const updatePost = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title, link, body } = req.body;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (post.author.toString() !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    post.title = title;
+    post.link = link;
+    post.body = body;
+
+    try {
+        const savedPost = await post.save();
+        res.status(200).json(savedPost);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Failed to update post' });
+    }
+};
+
+export const deletePost = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+        return res.status(404).json({message: 'No post found for id: ' + id})
+    }
+
+    if (post.author.toString() !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    try {
+        const deletedPost = await post.deleteOne();
+        res.status(204).json({});
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Failed to delete post' });
+    }
+};
