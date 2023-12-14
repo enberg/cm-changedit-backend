@@ -101,7 +101,7 @@ export const deletePost = async (req: Request, res: Response) => {
 
     try {
         const deletedPost = await post.deleteOne();
-        res.status(204).json({});
+        res.status(204).json(deletedPost);
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Failed to delete post' });
