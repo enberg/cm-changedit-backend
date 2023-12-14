@@ -20,6 +20,7 @@ app.get('/profile', validateToken, authController.profile);
 app.post('/posts', validateToken, postsController.create);
 app.get('/posts', postsController.getAllPosts);
 app.get('/posts/:id', postsController.getPost);
+app.post('/posts/:id/comments', validateToken, postsController.createComment);
 
 app.post('/posts/:postId/comments', validateToken, commentsController.createComment);
 app.delete('/posts/:postId/comments/:commentId', validateToken, commentsController.deleteComment);
