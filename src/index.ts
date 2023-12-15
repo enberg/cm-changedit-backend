@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import * as authController from './contollers/auth';
 import * as postsController from './contollers/posts';
+import * as commentsController from './contollers/comments';
 import validateToken from "./middleware/validateToken";
-import User from "./models/User";
 
 const app = express()
 
@@ -21,6 +21,9 @@ app.post('/posts', validateToken, postsController.create);
 app.get('/posts', postsController.getAllPosts);
 app.get('/posts/:id', postsController.getPost);
 
+app.post('/posts/:postId/comments', validateToken, commentsController.createComment);
+app.delete('/posts/:postId/comments/:commentId', validateToken, commentsController.deleteComment);
+
 const mongoURL = process.env.DB_URL;
 
 if (!mongoURL) throw Error('Missing db url');
@@ -28,13 +31,6 @@ if (!mongoURL) throw Error('Missing db url');
 mongoose.connect(mongoURL)
     .then(() => {
         const port = parseInt(process.env.PORT || '3000');
-        const admin = User.findOne({userName: 'admin'})
-        if (!admin) {
-            User.create({
-                userName: 'admin',
-                password: 'asdasdfsadf'
-            })
-        }
         app.listen(port, () => {
             console.log('Server listening on port ' + port);
         })
