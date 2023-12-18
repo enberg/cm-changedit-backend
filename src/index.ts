@@ -5,6 +5,7 @@ import cors from 'cors';
 import * as authController from './contollers/auth';
 import * as postsController from './contollers/posts';
 import * as commentsController from './contollers/comments';
+import * as votesController from './contollers/votes';
 import validateToken from "./middleware/validateToken";
 
 const app = express()
@@ -20,9 +21,9 @@ app.get('/profile', validateToken, authController.profile);
 app.post('/posts', validateToken, postsController.create);
 app.get('/posts', postsController.getAllPosts);
 app.get('/posts/:id', postsController.getPost);
-app.post('/posts/:id/comments', validateToken, postsController.createComment);
-app.post('/posts/:id/upvote', validateToken, postsController.upvote);
-app.post('/posts/:id/downvote', validateToken, postsController.downvote);
+
+app.post('/posts/:postId/upvote', validateToken, votesController.upvote);
+app.post('/posts/:postId/downvote', validateToken, votesController.downvote);
 
 app.post('/posts/:postId/comments', validateToken, commentsController.createComment);
 app.delete('/posts/:postId/comments/:commentId', validateToken, commentsController.deleteComment);

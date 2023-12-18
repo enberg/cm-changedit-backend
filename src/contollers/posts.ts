@@ -30,18 +30,80 @@ export const getAllPosts = async (req: Request, res: Response) => {
         res.status(400).json({ message: 'Malformed query object number: ' + req.query.toString() })
     }
 
-    const posts = await Post
-        .find({}, '-comments')
-        .sort({ createdAt: 'descending' })
-        .limit(limit)
-        .skip(limit * (page - 1))
-        .populate("author", "userName");
+    const posts = await Post.aggregate([
+        {
+            $addFields: {
+                sortValue: {
+                    $divide: [
+                        { $add: [ { $ifNull: ["$score", 0] }, 1] },
+                        {
+                            $pow: [
+                                {
+                                    $add: [
+                                        1,
+                                        {
+                                            $divide: [
+                                                { $subtract: [new Date(), "$createdAt"] },
+                                                1000 * 60 * 60
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1.5
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            $sort: { sortValue: -1 } // Sorting in descending order of sortValue
+        },
+        { $skip: limit * (page - 1) },
+        { $limit: limit },
+        {
+            $addFields: {
+                commentCount: {
+                    $size: { $ifNull: ["$comments", []] }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'author',
+                foreignField: '_id',
+                pipeline: [
+                    {
+                        $project: {
+                            userName: 1
+                        }
+                    }
+                ],
+                as: 'author'
+            },
+        },
+        {
+            $project: {
+                _id: 1,
+                title: 1,
+                link: 1,
+                body: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                score: 1,
+                commentCount: 1,
+                author: 1
+            }
+        },
+    ])
+        ;
 
     const totalCount = await Post.countDocuments();
 
     res.status(200).json({
         posts,
-        totalPages: Math.ceil(totalCount/limit),
+        totalPages: Math.ceil(totalCount / limit),
     })
 };
 
@@ -53,7 +115,7 @@ export const getPost = async (req: Request, res: Response) => {
         .populate("comments.author", "userName");
 
     if (!post) {
-        return res.status(404).json({message: 'No post found for id: ' + id})
+        return res.status(404).json({ message: 'No post found for id: ' + id })
     }
 
     res.status(200).json(post)
@@ -92,7 +154,7 @@ export const deletePost = async (req: Request, res: Response) => {
     const post = await Post.findById(id);
 
     if (!post) {
-        return res.status(404).json({message: 'No post found for id: ' + id})
+        return res.status(404).json({ message: 'No post found for id: ' + id })
     }
 
     if (post.author.toString() !== req.userId) {
@@ -107,95 +169,3 @@ export const deletePost = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Failed to delete post' });
     }
 };
-
-export const createComment = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { body } = req.body as { body: string };
-
-    const post = await Post.findById(id);
-
-    if (!post) {
-        return res.status(404).json({ message: 'Post not found' });
-    }
-
-    if (!req.userId) {
-        return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    const comment = {
-        body,
-        author: req.userId
-    };
-
-    post.comments.push(comment);
-
-    const updatedPost = await post.save().then(post => post.populate("comments.author", "userName"));
-
-    res.status(201).json(updatedPost);
-}
-
-export const deleteComment = async (req: Request, res: Response) => {
-    const { id, commentId } = req.params;
-
-    const post = await Post.findById(id);
-
-    if (!post) {
-        return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const comment = post.comments.id(commentId);
-
-    if (!comment) {
-        return res.status(404).json({ message: 'Comment not found' });
-    }
-
-    if (comment.author.toString() !== req.userId) {
-        return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    comment.deleteOne();
-
-    const updatedPost = await post.save();
-
-    res.status(200).json(updatedPost);
-}
-
-export const upvote = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    const post = await Post.findById(id);
-
-    if (!post) {
-        return res.status(404).json({ message: 'Post not found' });
-    }
-
-    if (!req.userId) {
-        return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    post.score += 1;
-
-    const updatedPost = await post.save();
-
-    res.status(200).json(updatedPost);
-}
-
-export const downvote = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    const post = await Post.findById(id);
-
-    if (!post) {
-        return res.status(404).json({ message: 'Post not found' });
-    }
-
-    if (!req.userId) {
-        return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    post.score -= 1;
-
-    const updatedPost = await post.save();
-
-    res.status(200).json(updatedPost);
-}

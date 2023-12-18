@@ -29,16 +29,20 @@ interface IPost extends Document {
     createdAt: Date;
     updatedAt: Date;
     comments: IComment[];
+    upvotes: Types.Array<Types.ObjectId>;
+    downvotes: Types.Array<Types.ObjectId>;
     score: number;
 }
 
 interface IPostProps {
     comments: Types.DocumentArray<IComment>;
+    upvote: (userId: Types.ObjectId) => void;
+    downvote: (userId: Types.ObjectId) => void;
 }
 
 type IPostModel = Model<IPost, {}, IPostProps>;
 
-const PostSchema = new Schema<IPost, IPostModel> ({
+const PostSchema = new Schema<IPost, IPostModel>({
     title: {
         type: String,
         required: true,
@@ -56,13 +60,63 @@ const PostSchema = new Schema<IPost, IPostModel> ({
         ref: 'User',
         required: true,
     },
-    comments: [CommentSchema],
+    comments: {
+        type: [CommentSchema],
+        select: false,
+    },
+    upvotes: {
+        type: [{
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }],
+        select: false,
+    },
+    downvotes: {
+        type: [{
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }],
+        select: false,
+    },
     score: {
         type: Number,
         default: 0
     },
 }, {
     timestamps: true
+});
+
+PostSchema.method('upvote', async function (this: IPost, userId: Types.ObjectId) {
+    if (this.upvotes.includes(userId)) {
+        return;
+    }
+
+    if (this.downvotes.includes(userId)) {
+        this.downvotes.pull(userId);
+    }
+
+    this.upvotes.push(userId);
+});
+
+PostSchema.method('downvote', async function (this: IPost, userId: Types.ObjectId) {
+    if (this.downvotes.includes(userId)) {
+        return;
+    }
+
+    if (this.upvotes.includes(userId)) {
+        this.upvotes.pull(userId);
+    }
+
+    this.downvotes.push(userId);
+});
+
+PostSchema.pre<IPost>('save', function (next) {
+    // Om vi har ändrat upvotes eller downvotes så vill vi uppdatera score
+    if (this.isModified('upvotes') || this.isModified('downvotes')) {
+        this.score = this.upvotes.length - this.downvotes.length;
+    }
+
+    next();
 });
 
 const Post = model<IPost, IPostModel>('Post', PostSchema);
