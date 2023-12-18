@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Error } from "mongoose";
 import Post from "../models/Post";
 import { assertDefined } from "../util/asserts";
 
@@ -15,14 +16,23 @@ export const createComment = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'Not post found for id: ' + postId });
     }
 
-    post.comments.push({
-        body: commentBody,
-        author: userId
-    });
+    try {
+        post.comments.push({
+            body: commentBody,
+            author: userId
+        });
 
-    const savedPost = await post.save();
+        const savedPost = await post.save();
 
-    res.status(201).json(savedPost);
+        res.status(201).json(savedPost);
+    } catch (error) {
+        if (error instanceof Error.ValidationError) {
+            return res.status(400).json({ message: error.message });
+        }
+
+        console.log(error);
+        res.status(500).json({ message: 'Failed to create comment' });
+    }
 }
 
 export const deleteComment = async (req: Request, res: Response) => {
@@ -35,7 +45,7 @@ export const deleteComment = async (req: Request, res: Response) => {
     if (!post) {
         return res.status(404).json({ message: 'Not post found for id: ' + postId });
     }
-    
+
     const comment = post.comments.id(commentId);
 
     if (!comment) {

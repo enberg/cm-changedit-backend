@@ -62,21 +62,18 @@ const PostSchema = new Schema<IPost, IPostModel>({
     },
     comments: {
         type: [CommentSchema],
-        select: false,
     },
     upvotes: {
         type: [{
             type: Schema.Types.ObjectId,
             ref: 'User'
         }],
-        select: false,
     },
     downvotes: {
         type: [{
             type: Schema.Types.ObjectId,
             ref: 'User'
         }],
-        select: false,
     },
     score: {
         type: Number,

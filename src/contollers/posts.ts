@@ -83,6 +83,7 @@ export const getAllPosts = async (req: Request, res: Response) => {
                 as: 'author'
             },
         },
+        { $unwind: '$author' },
         {
             $project: {
                 _id: 1,
