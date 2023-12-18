@@ -159,3 +159,43 @@ export const deleteComment = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedPost);
 }
+
+export const upvote = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!req.userId) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    post.score += 1;
+
+    const updatedPost = await post.save();
+
+    res.status(200).json(updatedPost);
+}
+
+export const downvote = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!req.userId) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    post.score -= 1;
+
+    const updatedPost = await post.save();
+
+    res.status(200).json(updatedPost);
+}

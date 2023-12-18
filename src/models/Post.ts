@@ -28,7 +28,8 @@ interface IPost extends Document {
     author: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
-    comments: IComment[]
+    comments: IComment[];
+    score: number;
 }
 
 interface IPostProps {
@@ -55,7 +56,11 @@ const PostSchema = new Schema<IPost, IPostModel> ({
         ref: 'User',
         required: true,
     },
-    comments: [CommentSchema]
+    comments: [CommentSchema],
+    score: {
+        type: Number,
+        default: 0
+    },
 }, {
     timestamps: true
 });
