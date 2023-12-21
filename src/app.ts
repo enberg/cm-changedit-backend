@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import * as authController from './contollers/auth';
 import * as postsController from './contollers/posts';
 import * as commentsController from './contollers/comments';
