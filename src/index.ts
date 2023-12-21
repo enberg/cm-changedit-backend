@@ -21,11 +21,14 @@ app.get('/profile', validateToken, authController.profile);
 app.post('/posts', validateToken, postsController.create);
 app.get('/posts', postsController.getAllPosts);
 app.get('/posts/:id', postsController.getPost);
+// app.put('/posts/:id', validateToken, postsController.updatePost);
+// app.delete('/posts/:id', validateToken, postsController.deletePost);
 
 app.post('/posts/:postId/upvote', validateToken, votesController.upvote);
 app.post('/posts/:postId/downvote', validateToken, votesController.downvote);
 
 app.post('/posts/:postId/comments', validateToken, commentsController.createComment);
+// app.put('/posts/:postId/comments/:commentId', validateToken, commentsController.updateComment);
 app.delete('/posts/:postId/comments/:commentId', validateToken, commentsController.deleteComment);
 
 const mongoURL = process.env.DB_URL;
