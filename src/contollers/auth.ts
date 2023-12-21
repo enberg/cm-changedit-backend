@@ -94,6 +94,7 @@ export const profile = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({
+        id: user._id,
         userName: user.userName
     })
 }
