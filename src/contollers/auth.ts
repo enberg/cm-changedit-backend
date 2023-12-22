@@ -23,7 +23,6 @@ export const register = async (req: Request, res: Response) => {
 }
 
 export const logIn = async (req: Request, res: Response) => {
-    console.log(req.userId);
     try {
         // Ta in användarnamn och lösen
         const { username, password } = req.body;
