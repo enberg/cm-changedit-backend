@@ -5,8 +5,10 @@ import * as authController from './contollers/auth';
 import * as postsController from './contollers/posts';
 import * as commentsController from './contollers/comments';
 import * as votesController from './contollers/votes';
+import * as imagesController from './contollers/images';
 import validateToken from "./middleware/validateToken";
 
+const upload = multer();
 const app = express()
 
 app.use(cors());
@@ -17,7 +19,7 @@ app.post('/login', authController.logIn);
 app.post('/token/refresh', authController.refreshJWT);
 app.get('/profile', validateToken, authController.profile);
 
-app.post('/posts', validateToken, postsController.create);
+app.post('/posts', validateToken, upload.single('image'), postsController.create);
 app.get('/posts', postsController.getAllPosts);
 app.get('/posts/:id', postsController.getPost);
 // app.put('/posts/:id', validateToken, postsController.updatePost);
@@ -29,5 +31,7 @@ app.post('/posts/:postId/downvote', validateToken, votesController.downvote);
 app.post('/posts/:postId/comments', validateToken, commentsController.createComment);
 // app.put('/posts/:postId/comments/:commentId', validateToken, commentsController.updateComment);
 app.delete('/posts/:postId/comments/:commentId', validateToken, commentsController.deleteComment);
+
+app.get('/images/:filename', imagesController.getImage);
 
 export default app;

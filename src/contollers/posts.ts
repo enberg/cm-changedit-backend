@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Post from "../models/Post";
 import { assertDefined } from "../util/asserts";
 
@@ -6,15 +7,40 @@ export const create = async (req: Request, res: Response) => {
     assertDefined(req.userId);
     const { title, link, body } = req.body;
 
-    const post = new Post({
-        title,
-        link,
-        body,
-        author: req.userId
-    })
-
     try {
+        const post = new Post({
+            title,
+            link,
+            body,
+            author: req.userId
+        })
+
+        if (req.file) {
+            const conn = mongoose.connection;
+
+            const bucket = new mongoose.mongo.GridFSBucket(conn.db, {
+                bucketName: 'photos'
+            })
+
+            const uploadStream = bucket.openUploadStream(req.file.originalname);
+            const id = uploadStream.id;
+
+            await new Promise((resolve, reject) => {
+                uploadStream.once('finish', resolve);
+                uploadStream.once('error', reject);
+
+                uploadStream.end(req.file!.buffer);
+            })
+
+            post.photo = {
+                id,
+                mimeType: req.file.mimetype,
+                size: req.file.size
+            }
+        }
+
         const savedPost = await post.save();
+
         res.status(201).json(savedPost);
     } catch (error) {
         console.log(error);
@@ -41,10 +67,12 @@ export const getAllPosts = async (req: Request, res: Response) => {
             $addFields: { // 8: Spara resultatet som sortValue på varje post
                 sortValue: {
                     $divide: [ // 7: Dividera resultatet av steg 6 med steg 4
-                        { $add: [ // 6: Addera 1 till score
-                            { $ifNull: ["$score", 0] }, // 5: Om score inte finns, använd 0
-                            1
-                        ] },
+                        {
+                            $add: [ // 6: Addera 1 till score
+                                { $ifNull: ["$score", 0] }, // 5: Om score inte finns, använd 0
+                                1
+                            ]
+                        },
                         {
                             $pow: [ // 4: Upphöj till 1.5
                                 {
@@ -114,7 +142,7 @@ export const getAllPosts = async (req: Request, res: Response) => {
 
     res.status(200).json({
         posts,
-        totalPages: Math.ceil(totalCount/limit),
+        totalPages: Math.ceil(totalCount / limit),
     })
 }
 
@@ -122,11 +150,11 @@ export const getPost = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const post = await Post.findById(id)
-     .populate("author")
-     .populate("comments.author");
+        .populate("author")
+        .populate("comments.author");
 
     if (!post) {
-        return res.status(404).json({message: 'No post found for id: ' + id})
+        return res.status(404).json({ message: 'No post found for id: ' + id })
     }
 
     res.status(200).json(post)
