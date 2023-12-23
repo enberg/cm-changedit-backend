@@ -11,7 +11,7 @@ const getBucket = () => {
 export const uploadFile = (
   filename: string,
   content: Buffer,
-  metadata?: { [key: string]: any }
+  metadata?: { [key: string]: any },
 ): Promise<Types.ObjectId> => {
   const bucket = getBucket();
   const uploadStream = bucket.openUploadStream(filename, {

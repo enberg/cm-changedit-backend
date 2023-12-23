@@ -19,8 +19,8 @@ export const create = async (req: Request, res: Response) => {
     if (req.file) {
       const fileId = await uploadFile(req.file.originalname, req.file.buffer, {
         mimeType: req.file.mimetype,
-        size: req.file.size
-      })
+        size: req.file.size,
+      });
 
       post.image = {
         mimeType: req.file.mimetype,
@@ -42,11 +42,9 @@ export const getAllPosts = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page?.toString() || "1");
 
   if (isNaN(page) || isNaN(limit)) {
-    res
-      .status(400)
-      .json({
-        message: "Malformed query object number: " + req.query.toString(),
-      });
+    res.status(400).json({
+      message: "Malformed query object number: " + req.query.toString(),
+    });
   }
 
   const posts = await Post.aggregate([
